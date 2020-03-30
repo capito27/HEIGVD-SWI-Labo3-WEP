@@ -45,6 +45,8 @@ cipher = RC4(seed, streaming=False)
 cleartext = binascii.unhexlify(args.message.replace(':', ''))
 fragments = [cleartext[i:i+len(cleartext)//3 + 1] for i in range(0, len(cleartext), len(cleartext)//3 + 1)]
 
+# same method as for manual encryption but for each fragment
+
 for i, fragment in enumerate(fragments):
 
     # then we create the appropriate CRC32 value, packing it to little endian
@@ -58,6 +60,8 @@ for i, fragment in enumerate(fragments):
 
     # we can then add the numerical icv to the arp packet
     arp.icv = struct.unpack('!L', ciphertext[-4:])[0]
+
+    # we set the FCfield depending on whether it's the last fragment or not
 
     if i != len(fragments) - 1:
         arp.FCfield |= 0x4

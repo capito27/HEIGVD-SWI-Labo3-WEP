@@ -117,10 +117,21 @@ Un fork du repo original . Puis, un Pull Request contenant :
 
 -	Script de chiffrement WEP **abondamment commenté/documenté**
   - Fichier pcap généré par votre script contenant la trame chiffrée
+
+    [La capture.](manual_encrypt.pcap)
+
   - Capture d’écran de votre trame importée et déchiffré par Wireshark
+
+    ![Frame in Wireshark](manual_encrypt.png)
+
 -	Script de fragmentation **abondamment commenté/documenté**
   - Fichier pcap généré par votre script contenant les fragments
+
+    [La capture.](fragment.pcap)
+
   - Capture d’écran de vos trames importées et déchiffrés par Wireshark 
+
+    ![Frame in Wireshark](fragment.png)
 
 -	Envoyer le hash du commit et votre username GitHub par email au professeur et à l'assistant
 

@@ -55,7 +55,7 @@ arp.wepdata = ciphertext[:-4]
 # we can then add the numerical icv to the arp packet
 arp.icv = struct.unpack('!L', ciphertext[-4:])[0]
 
-wrpcap('new_arp.pcap', arp)
+wrpcap('new_packet.pcap', arp)
 
 sendp(arp, iface=args.Interface)
 

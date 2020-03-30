@@ -25,11 +25,11 @@ parser.add_argument("-i", "--Interface", required=True,
 parser.add_argument("-k", "--wep-key", required=True,
                     help="The WEP key to encrypt the message with, must be of the format XX:XX:XX:XX:XX")
 parser.add_argument("-m", "--message", required=True,
-                    help="The message to encrypt, at most 2312 bytes (max WEP payload size), as an hex string")
+                    help="The message to encrypt, at most 16*36 bytes (576), as an hex string")
 
 args = parser.parse_args()
 
-pktdump = PcapWriter("new_arp.pcap", append=True, sync=True)
+pktdump = PcapWriter("fragment.pcap", append=True, sync=True)
 
 # Cle wep AA:AA:AA:AA:AA
 key = binascii.unhexlify(args.wep_key.replace(':', ''))
@@ -43,17 +43,25 @@ seed = arp.iv + key
 cipher = RC4(seed, streaming=False)
 
 cleartext = binascii.unhexlify(args.message.replace(':', ''))
-fragments = [cleartext[i:i+len(cleartext)//3 + 1] for i in range(0, len(cleartext), len(cleartext)//3 + 1)]
+
+# configurable
+fragmentSize = 36
+minFragCount = 3
+
+fragments = []
+for i in range(0, max(math.ceil(len(cleartext) / fragmentSize), minFragCount)):
+    frag = cleartext[i*fragmentSize: (i+1) * fragmentSize]
+    frag += b'\0'*(fragmentSize - len(frag))
+    fragments.append(frag)
 
 # same method as for manual encryption but for each fragment
-
 for i, fragment in enumerate(fragments):
 
     # then we create the appropriate CRC32 value, packing it to little endian
-    crc = struct.pack('<L', zlib.crc32(cleartext))
+    crc = struct.pack('<L', zlib.crc32(fragment))
 
     # we generate the ciphertext with the cleartext, and the previously used seed
-    ciphertext = cipher.crypt(cleartext + crc)
+    ciphertext = cipher.crypt(fragment + crc)
 
     # we then can add the ciphertext to the arp packet wepdata (ommiting the ICV)
     arp.wepdata = ciphertext[:-4]
@@ -62,16 +70,15 @@ for i, fragment in enumerate(fragments):
     arp.icv = struct.unpack('!L', ciphertext[-4:])[0]
 
     # we set the FCfield depending on whether it's the last fragment or not
-
     if i != len(fragments) - 1:
         arp.FCfield |= 0x4
     else:
         arp.FCfield &= ~0x4
-    print(arp.FCfield)
-    arp.SC += i
 
-    print(arp.SC)
+    arp.SC += i
     pktdump.write(arp)
+
     #sendp(arp, iface=args.Interface)
+
     arp.SC -= i
 
